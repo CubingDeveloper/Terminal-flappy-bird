@@ -114,15 +114,15 @@ int main() {
     
 
     while (true) {
+        //Step 0: wait 💤💤💤
+        this_thread::sleep_for(1s);
+        
         //Step 1: Handle movement
         move_and_spawn_pipes();
         move_bird();
 
-        //Step 2: Buffer frame and wait one second
+        //Step 2: Make and render the frame
         vector<wstring> frame_to_render = make_current_frame();
-        this_thread::sleep_for(1s);
-        
-        //Step 3: Render the frame
         render_current_frame(frame_to_render);
     }
 
