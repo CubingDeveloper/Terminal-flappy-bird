@@ -3,25 +3,41 @@
 #include <ctime>
 #include <vector>
 #include <locale>
-#include <thread>
+#include <thread> //for waiting
 
-#include <io.h>
-#include <fcntl.h>
+#include <windows.h>
+#include <fcntl.h> //for utf-8 command line
 #include <conio.h> //for keyboard input 🔥
 
-bool can_run = false;
+#include "parrot.hpp"
 
-#ifdef _WIN32
-    #include <windows.h> //indent here is such a python thing of me to do lol
-#endif
+bool can_run = false;
 
 using namespace std;
 
 int bird_y = 6;
 int current_frame = 0;
+int score = 0;
 
 bool should_game_over = false;
-int score = 0;
+bool should_win = false; //YES!!!
+
+WORD colors[] = {
+    FOREGROUND_RED | FOREGROUND_INTENSITY,
+    FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+    FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+    FOREGROUND_RED | FOREGROUND_GREEN, // yellow-ish
+    FOREGROUND_GREEN | FOREGROUND_BLUE, // cyan-ish
+    FOREGROUND_RED | FOREGROUND_BLUE, // magenta-ish
+    FOREGROUND_RED,
+    FOREGROUND_GREEN,
+    FOREGROUND_BLUE,
+    FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE, // white (default)
+};
+
+HANDLE h_out = GetStdHandle(STD_OUTPUT_HANDLE);
+COORD top_left = {0, 0};
+CONSOLE_CURSOR_INFO cursor_info;
 
 vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 
@@ -50,7 +66,7 @@ vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 
 void move_and_spawn_pipes(){
     if (current_frame % 9 == 0) {
-        pipes.push_back(vector<int> {48, (rand() % 8) - 4});
+        pipes.push_back(vector<int> {48, (rand() % 5) - 2});
     }
 
     bool should_delete_front = false;
@@ -97,17 +113,43 @@ vector<wstring> make_current_frame(){
     return frame_template;
 }
 
+void hide_cursor() {
+    GetConsoleCursorInfo(h_out, &cursor_info);
+    cursor_info.bVisible = FALSE;
+    SetConsoleCursorInfo(h_out, &cursor_info);
+}
+
+void clear_console_text(HANDLE h_console) {
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    DWORD count;
+    DWORD cellCount;
+    COORD homeCoords = {0, 0};
+
+    if (!GetConsoleScreenBufferInfo(h_console, &csbi)) return;
+    cellCount = csbi.dwSize.X * csbi.dwSize.Y;
+
+    // Fill the screen with spaces (erase text)
+    FillConsoleOutputCharacter(h_console, L' ', cellCount, homeCoords, &count);
+
+    // Keep existing attributes (colors)
+    FillConsoleOutputAttribute(h_console, csbi.wAttributes, cellCount, homeCoords, &count);
+
+    // Reset cursor position to top-left
+    SetConsoleCursorPosition(h_console, homeCoords);
+}
+
+
 void render_current_frame(vector<wstring> frame) {
+    hide_cursor();
     wstring frame_buffer = L"";
     for (wstring line_to_render : frame ) {
 
         frame_buffer += (line_to_render + L"\n");
         
     }
-    system("cls");
-    wcout << frame_buffer;
+    SetConsoleCursorPosition(h_out, top_left);
 
-    
+    wcout << frame_buffer << endl << "SCORE: " << score << endl;
 }
 
 void move_bird(){
@@ -117,37 +159,25 @@ void move_bird(){
     }
     for (vector<int> pipe : pipes) {
         if (pipe[0] != 10) continue;
-        int offset_y = bird_y + pipe[1];
+        int offset_y = bird_y - pipe[1];
         
         if (offset_y < 4 || offset_y > 6 ) {
             should_game_over = true;
         } else {
             score++;
+            if (score == 5) should_win = true;
         }
         
     }
 }
 
 int main() {
-    #ifdef _WIN32
-
-    can_run = true;
-
-    #endif    
-
-    if (!can_run) {
-        cout << "This program is only meant to be ran on windows operating systems.";
-        return 0;
-    }
-
     //Enable UTF 8 support in the console (thanks ChatGPT)
     SetConsoleOutputCP(CP_UTF8);
     _setmode(_fileno(stdout), _O_U8TEXT);
 
-    cout << "Welcome :imp:";
     srand(time(0)); //Make a random seed based on the current UNIX time (I think idfk)
     
-
     while (true) {
         //Step 0: wait 💤💤💤
         this_thread::sleep_for(250ms);
@@ -166,8 +196,24 @@ int main() {
 
         //Step 4: Check if we should quit the game.
         if (should_game_over) {
-            wcout << L"GAME OVER" << endl << L"SCORE: " << score << "\n\n\n" << L"Press enter to quit. ";
+            wcout << L"GAME OVER!\n\n\n" << L"Press enter to quit. ";
             cin.get();
+            break;
+        }
+        if (should_win) {
+            int current_parrot_frame = 0;
+            this_thread::sleep_for(500ms);
+            clear_console_text(h_out);
+            while (true) {
+                SetConsoleCursorPosition(h_out, top_left);
+                SetConsoleTextAttribute(h_out, colors[current_parrot_frame%10]);
+                wcout << L"YOU WON!!!!!!" << endl << L"(you do that be getting a score of 25)" << endl << L"very secret ik" << endl;
+                wcout << get_frame(current_parrot_frame);
+                wcout << endl << L"Press any key to quit";
+                current_parrot_frame++;
+                this_thread::sleep_for(200ms);
+                if (_kbhit()) break;
+            }
             break;
         }
 
