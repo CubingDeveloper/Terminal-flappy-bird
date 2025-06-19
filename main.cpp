@@ -50,7 +50,7 @@ vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 
 void move_and_spawn_pipes(){
     if (current_frame % 7 == 0) {
-        pipes.push_back(vector {48, 1});
+        pipes.push_back(vector<int> {48, 1});
     }
 
     for (int i=0;i < pipes.size();i++) {
