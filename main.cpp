@@ -22,6 +22,8 @@ using namespace std;
 int bird_y = 6;
 int current_frame = 0;
 
+bool should_game_over = false;
+int score = 0;
 
 vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 
@@ -92,7 +94,10 @@ void render_current_frame(vector<wstring> frame) {
 }
 
 void move_bird(){
-    bird_y += (_kbhit() && _getch() == ' ') ? 2 : -1;
+    bird_y = min(10, bird_y + ((_kbhit() && _getch() == ' ') ? 2 : -1));
+    if (bird_y == 0 || bird_y == 10) {
+        should_game_over = true;
+    }
 }
 
 int main() {
@@ -118,14 +123,22 @@ int main() {
     while (true) {
         //Step 0: wait 💤💤💤
         this_thread::sleep_for(1s);
-        
+
         //Step 1: Handle movement
         move_and_spawn_pipes();
         move_bird();
 
+
         //Step 2: Make and render the frame
         vector<wstring> frame_to_render = make_current_frame();
         render_current_frame(frame_to_render);
+
+        //Step 3: Check if we should quit the game.
+        if (should_game_over) {
+            wcout << L"GAME OVER" << endl << L"SCORE: " << score << "\n\n\n" << L"Press enter to quit. ";
+            cin.get();
+            break;
+        }
     }
 
     return 1;
