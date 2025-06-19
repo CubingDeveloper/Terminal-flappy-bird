@@ -11,8 +11,6 @@
 
 bool can_run = false;
 
-const int FPS = 10;
-
 #ifdef _WIN32
     #include <windows.h> //indent here is such a python thing of me to do lol
 #endif
@@ -38,10 +36,10 @@ vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 ←──────────────────────48──────────────────────→
 ╔══════════════════════════════════════════════╗ ↑
 ║ █        █        █        █        █        ║ │
-║ █        █        █        █        █        ║ │
 ║ █        █        █        █                 ║ │
 ║          █                 █                 ║ │
-║         ☻                  █        █        ║ 11
+║                            █                 ║ │
+║         ☻                           █        ║ 11
 ║ █                 █                 █        ║ │
 ║ █        █        █                 █        ║ │
 ║ █        █        █        █        █        ║ │
@@ -51,13 +49,17 @@ vector<vector<int>> pipes; //2D array, {Pipe: {X position, Y offset}}
 */
 
 void move_and_spawn_pipes(){
-    if (current_frame % 7 == 0) {
-        pipes.push_back(vector<int> {48, 1});
+    if (current_frame % 9 == 0) {
+        pipes.push_back(vector<int> {48, (rand() % 8) - 4});
     }
 
+    bool should_delete_front = false;
     for (int i=0;i < pipes.size();i++) {
-        pipes[i][0] -= 1; //moves each pipe towards the end scaryy ik
+        int new_x = pipes[i][0] - 1;
+        if (new_x == 0) should_delete_front = true;
+        pipes[i][0] = new_x; //moves each pipe towards the end scaryy ik
     }
+    if (should_delete_front) pipes.erase(pipes.begin());
 
 
 }
@@ -76,7 +78,22 @@ vector<wstring> make_current_frame(){
     L"║                                              ║",
     L"╚══════════════════════════════════════════════╝"
     };
+    
+
+    for (int i = 1;i<10;i++) {
+        for (vector<int> pipe : pipes) {
+
+            if (pipe[0] == 0 || pipe[0] == 47) continue;
+            int offset_i = i + pipe[1];
+            if (offset_i >= 4 && offset_i <= 6) continue;
+            frame_template[i][pipe[0]] = L'█';
+
+
+        }
+    }
+
     frame_template[10-bird_y][10] = L'☻';
+
     return frame_template;
 }
 
@@ -122,7 +139,7 @@ int main() {
 
     while (true) {
         //Step 0: wait 💤💤💤
-        this_thread::sleep_for(1s);
+        this_thread::sleep_for(250ms);
 
         //Step 1: Handle movement
         move_and_spawn_pipes();
@@ -133,12 +150,16 @@ int main() {
         vector<wstring> frame_to_render = make_current_frame();
         render_current_frame(frame_to_render);
 
-        //Step 3: Check if we should quit the game.
+        //Step 3: Increment current frame count
+        current_frame++;
+
+        //Step 4: Check if we should quit the game.
         if (should_game_over) {
             wcout << L"GAME OVER" << endl << L"SCORE: " << score << "\n\n\n" << L"Press enter to quit. ";
             cin.get();
             break;
         }
+
     }
 
     return 1;
