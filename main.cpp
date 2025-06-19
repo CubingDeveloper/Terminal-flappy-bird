@@ -115,6 +115,17 @@ void move_bird(){
     if (bird_y == 0 || bird_y == 10) {
         should_game_over = true;
     }
+    for (vector<int> pipe : pipes) {
+        if (pipe[0] != 10) continue;
+        int offset_y = bird_y + pipe[1];
+        
+        if (offset_y < 4 || offset_y > 6 ) {
+            should_game_over = true;
+        } else {
+            score++;
+        }
+        
+    }
 }
 
 int main() {
