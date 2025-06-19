@@ -165,7 +165,7 @@ void move_bird(){
             should_game_over = true;
         } else {
             score++;
-            if (score == 5) should_win = true;
+            if (score == 25) should_win = true;
         }
         
     }
@@ -207,7 +207,7 @@ int main() {
             while (true) {
                 SetConsoleCursorPosition(h_out, top_left);
                 SetConsoleTextAttribute(h_out, colors[current_parrot_frame%10]);
-                wcout << L"YOU WON!!!!!!" << endl << L"(you do that be getting a score of 25)" << endl << L"very secret ik" << endl;
+                wcout << L"YOU WON!!!!!!" << endl << L"(you do that by getting a score of 25)" << endl << L"very secret ik" << endl;
                 wcout << get_frame(current_parrot_frame);
                 wcout << endl << L"Press any key to quit";
                 current_parrot_frame++;
