@@ -79,13 +79,15 @@ vector<wstring> make_current_frame(){
 }
 
 void render_current_frame(vector<wstring> frame) {
-
-    system("cls");
+    wstring frame_buffer = L"";
     for (wstring line_to_render : frame ) {
 
-        wcout << line_to_render << endl;
+        frame_buffer += (line_to_render + L"\n");
         
     }
+    system("cls");
+    wcout << frame_buffer;
+
     
 }
 
